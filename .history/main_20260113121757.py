@@ -43,5 +43,3 @@ class SimulationController:
 if __name__ == "__main__":
     app = SimulationController()
     app.run()
-
-
