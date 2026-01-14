@@ -8,7 +8,6 @@ class TrafficLight:
         self.pen = turtle.Turtle()
         self.pen.hideturtle()
         self.pen.penup()
-        self.timer = 0
 
         # Configuration visuelle
         self.pen = turtle.Turtle()
