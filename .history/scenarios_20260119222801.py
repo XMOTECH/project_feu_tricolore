@@ -6,29 +6,21 @@ class ScenarioStrategy(ABC):
         self.name = "Inconnu"
 
     @abstractmethod
-    def update_intersection(self, intersection):
-        """Définit comment l'intersection évolue à chaque frame."""
-        pass
-    
-    # Compatibilité avec l'ancien système (un seul feu)
     def update_light(self, traffic_light):
-        """Fallback pour compatibilité."""
+        """Définit comment le feu évolue à chaque frame."""
         pass
 
 class NormalScenario(ScenarioStrategy):
     def __init__(self):
         self.name = "Normal"
-
-    def update_intersection(self, intersection):
-        """Cycle standard automatique."""
-        intersection.standard_update()
+        # Durées en frames (approx 2 sec vert, 1 sec orange, 2 sec rouge)
+        self.durations = {"VERT": 100, "ORANGE": 40, "ROUGE": 100}
 
     def update_light(self, light):
-        """Compatibilité ancien système."""
         light.timer += 1
-        durations = {"VERT": 100, "ORANGE": 40, "ROUGE": 100}
-        limit = durations.get(light.state, 100)
+        limit = self.durations.get(light.state, 100)
         
+        # Cycle standard : Vert -> Orange -> Rouge -> Vert
         if light.timer >= limit:
             light.timer = 0
             if light.state == "VERT": light.state = "ORANGE"
@@ -39,27 +31,13 @@ class NormalScenario(ScenarioStrategy):
 class RushHourScenario(ScenarioStrategy):
     def __init__(self):
         self.name = "Heure de Pointe"
-        # Phases plus longues pour fluidifier le trafic
-        self.phase_durations = {
-            "A": 200, "A_ORANGE": 30, "B": 200, "B_ORANGE": 30
-        }
-
-    def update_intersection(self, intersection):
-        """Cycle optimisé pour trafic dense."""
-        intersection.timer += 1
-        
-        limit = self.phase_durations.get(intersection.current_phase, 100)
-        
-        if intersection.timer >= limit:
-            intersection.timer = 0
-            intersection.phase_index = (intersection.phase_index + 1) % len(intersection.phase_sequence)
-            intersection.current_phase = intersection.phase_sequence[intersection.phase_index]
-            intersection._apply_phase()
+        # Vert très long (4s), Rouge court (1s) pour fluidifier
+        self.durations = {"VERT": 200, "ORANGE": 30, "ROUGE": 50}
 
     def update_light(self, light):
+        # Même logique que Normal, mais avec des durées différentes
         light.timer += 1
-        durations = {"VERT": 200, "ORANGE": 30, "ROUGE": 50}
-        limit = durations.get(light.state, 100)
+        limit = self.durations.get(light.state, 100)
         
         if light.timer >= limit:
             light.timer = 0
@@ -72,17 +50,16 @@ class NightScenario(ScenarioStrategy):
     def __init__(self):
         self.name = "Mode Nuit"
 
-    def update_intersection(self, intersection):
-        """Tous les feux clignotent orange."""
-        intersection.night_mode_update()
-
     def update_light(self, light):
+        # Logique Spéciale : Clignotement Orange
         light.timer += 1
         
+        # Si le feu est sur Rouge ou Vert, on force l'Orange tout de suite
         if light.state not in ["ORANGE", "ETEINT"]:
             light.state = "ORANGE"
             light.timer = 0
         
+        # Clignotement tous les 30 frames
         if light.timer >= 30:
             light.timer = 0
             if light.state == "ORANGE":
@@ -95,10 +72,7 @@ class ManualScenario(ScenarioStrategy):
     def __init__(self):
         self.name = "Manuel"
 
-    def update_intersection(self, intersection):
-        """Pas de changement automatique. Attend action utilisateur."""
-        pass
-
     def update_light(self, light):
-        """Le feu ne change JAMAIS seul."""
+        # Le feu ne change JAMAIS seul.
+        # Il attend une action utilisateur (gérée dans main.py)
         pass

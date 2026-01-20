@@ -1,13 +1,14 @@
 import turtle
 
 class TrafficLight:
-    def __init__(self, x, y, direction="EST", size_scale=1.0):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.direction = direction
         self.state = "ROUGE"
+        self.pen = turtle.Turtle()
+        self.pen.hideturtle()
+        self.pen.penup()
         self.timer = 0
-        self.size_scale = size_scale
 
         # Configuration visuelle
         self.pen = turtle.Turtle()
@@ -16,53 +17,44 @@ class TrafficLight:
         self.pen.penup()
         
         # Durées (en frames, approx 50 frames = 1 seconde)
+        # Plus tard, ces valeurs viendront du fichier scenarios.py
         self.durations = {"VERT": 100, "ORANGE": 40, "ROUGE": 100}
         
         self.draw_housing()
         self.update_visuals()
         
-    def draw_housing(self):
-        """Dessine le boîtier du feu (compact)."""
-        scale = self.size_scale
-        width = int(20 * scale)
-        height = int(60 * scale)
         
-        self.pen.goto(self.x - width/2, self.y + height/2)
+    def draw_housing(self):
+        """Dessine le boîtier du feu."""
+        self.pen.goto(self.x - 15, self.y + 60)
         self.pen.color("black")
         self.pen.begin_fill()
         for _ in range(2):
-            self.pen.forward(width)
+            self.pen.forward(30)
             self.pen.right(90)
-            self.pen.forward(height)
+            self.pen.forward(100)
             self.pen.right(90)
         self.pen.end_fill()
 
     def update_visuals(self):
         """Allume le bon cercle selon l'état."""
+        # Positions des feux: Rouge(haut), Orange(milieu), Vert(bas)
         colors = {"ROUGE": "darkred", "ORANGE": "sienna", "VERT": "darkgreen"}
         
+        # On allume la couleur active (les autres restent sombres)
         if self.state == "ROUGE": colors["ROUGE"] = "red"
         elif self.state == "ORANGE": colors["ORANGE"] = "orange"
-        elif self.state == "VERT": colors["VERT"] = "#00FF00"
-        elif self.state == "ETEINT": pass  # Tout reste sombre
+        elif self.state == "VERT": colors["VERT"] = "#00FF00" # Lime green
 
-        scale = self.size_scale
-        spacing = int(18 * scale)
-        dot_size = int(14 * scale)
-        
-        self._draw_circle(self.y + spacing, colors["ROUGE"], dot_size)
-        self._draw_circle(self.y, colors["ORANGE"], dot_size)
-        self._draw_circle(self.y - spacing, colors["VERT"], dot_size)
+        self._draw_circle(self.y + 35, colors["ROUGE"])
+        self._draw_circle(self.y + 5, colors["ORANGE"])
+        self._draw_circle(self.y - 25, colors["VERT"])    
 
-    def _draw_circle(self, y_pos, color, size=14):
+
+
+    def _draw_circle(self, y_pos, color):
         self.pen.goto(self.x, y_pos)
-        self.pen.dot(size, color)
-
-    def set_state(self, new_state):
-        """Change l'état du feu (utilisé par IntersectionController)."""
-        if self.state != new_state:
-            self.state = new_state
-            self.update_visuals()
+        self.pen.dot(20, color) # Dessine un point de diamètre 20    
 
     def change_state(self):
         """Logique de cycle : Vert -> Orange -> Rouge -> Vert"""
@@ -73,16 +65,17 @@ class TrafficLight:
         elif self.state == "ROUGE":
             self.state = "VERT"
         
-        self.timer = 0
+        self.timer = 0 # Reset du timer
         self.update_visuals()
 
     def update(self, scenario_strategy):
         """Délègue la logique de mise à jour au scénario actif."""
         scenario_strategy.update_light(self)
 
+    # Ajoutez cette méthode pour le Mode Manuel
     def manual_change(self):
         if self.state == "VERT": self.state = "ORANGE"
         elif self.state == "ORANGE": self.state = "ROUGE"
         elif self.state == "ROUGE": self.state = "VERT"
-        else: self.state = "ROUGE"
-        self.update_visuals()
+        else: self.state = "ROUGE" # Sécurité si on vient du mode nuit
+        self.update_visuals()    
